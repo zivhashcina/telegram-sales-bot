@@ -1,0 +1,32 @@
+{
+  "symbol": "BOT",
+  "name": "Botcoin",
+  "rank": 1,
+  "age": 365,
+  "color": "#3A6A9B",
+  "png32": "https://example.com/bot32.png",
+  "png64": "https://example.com/bot64.png",
+  "webp32": "https://example.com/bot32.webp",
+  "webp64": "https://example.com/bot64.webp",
+  "exchanges": {
+    "binance": true,
+    "kucoin": true,
+    "bybit": false
+  },
+  "markets": [
+    {
+      "name": "Binance",
+      "base": "BOT",
+      "quote": "USDT",
+      "price": 0.1234,
+      "volume": 1234567
+    },
+    {
+      "name": "KuCoin",
+      "base": "BOT",
+      "quote": "BTC",
+      "price": 0.00001234,
+      "volume": 98765
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+.card {
+    border-radius: 10px;
+}
+.table img {
+    border-radius: 5px;
+    object-fit: cover;
+}

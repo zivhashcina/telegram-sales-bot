@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>ניהול מוצרים <a href="{{ url_for('add_product') }}" class="btn btn-primary btn-sm">➕ הוסף מוצר</a></h1>
+<table class="table table-striped">
+    <thead>
+        <tr><th>ID</th><th>תמונה</th><th>שם</th><th>קטגוריה</th><th>מחיר</th><th>צפיות</th><th>קליקים</th><th>סטטוס</th><th>פעולות</th></tr>
+    </thead>
+    <tbody>
+    {% for p in products %}
+        <tr>
+            <td>{{ p.id }}</td>
+            <td><img src="{{ p.image_url }}" width="50"></td>
+            <td>{{ p.name }}</td>
+            <td>{{ p.category }}</td>
+            <td>{{ p.price }} ₪</td>
+            <td>{{ p.views }}</td>
+            <td>{{ p.clicks }}</td>
+            <td>{% if p.is_active %}✅ פעיל{% else %}❌ לא פעיל{% endif %}</td>
+            <td>
+                <a href="{{ url_for('edit_product', product_id=p.id) }}" class="btn btn-sm btn-warning">✏️</a>
+                <a href="{{ url_for('delete_product', product_id=p.id) }}" class="btn btn-sm btn-danger" onclick="return confirm('בטוח?')">🗑️</a>
+            </td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>קמפיינים <a href="{{ url_for('add_campaign') }}" class="btn btn-primary btn-sm">➕ קמפיין חדש</a></h1>
+<table class="table">
+    <thead><tr><th>שם</th><th>הודעה</th><th>תזמון</th><th>נשלח</th><th>פעולות</th></tr></thead>
+    <tbody>
+    {% for c in campaigns %}
+        <tr>
+            <td>{{ c.name }}</td>
+            <td>{{ c.message[:50] }}...</td>
+            <td>{{ c.scheduled_at.strftime('%d/%m/%Y %H:%M') if c.scheduled_at else 'מיידי' }}</td>
+            <td>{{ 'כן' if c.sent_at else 'לא' }}</td>
+            <td><a href="{{ url_for('send_campaign', campaign_id=c.id) }}" class="btn btn-sm btn-success">שלח עכשיו</a></td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

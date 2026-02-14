@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>דשבורד</h1>
+<div class="row">
+    <div class="col-md-3">
+        <div class="card text-white bg-primary mb-3">
+            <div class="card-body">
+                <h5 class="card-title">משתמשים</h5>
+                <p class="card-text display-6">{{ total_users }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-success mb-3">
+            <div class="card-body">
+                <h5 class="card-title">מוצרים</h5>
+                <p class="card-text display-6">{{ total_products }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-warning mb-3">
+            <div class="card-body">
+                <h5 class="card-title">צפיות</h5>
+                <p class="card-text display-6">{{ total_views }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-danger mb-3">
+            <div class="card-body">
+                <h5 class="card-title">קליקים</h5>
+                <p class="card-text display-6">{{ total_clicks }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <h3>מוצרים חמים</h3>
+        <table class="table table-striped">
+            <thead><tr><th>שם</th><th>קליקים</th></tr></thead>
+            <tbody>
+            {% for p in top_products %}
+                <tr><td>{{ p.name }}</td><td>{{ p.clicks }}</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="col-md-6">
+        <h3>חיפושים אחרונים</h3>
+        <table class="table table-striped">
+            <thead><tr><th>משתמש</th><th>חיפוש</th><th>תוצאות</th><th>זמן</th></tr></thead>
+            <tbody>
+            {% for s in recent_searches %}
+                <tr><td>{{ s.user_id }}</td><td>{{ s.query }}</td><td>{{ s.results_count }}</td><td>{{ s.created_at.strftime('%d/%m/%Y %H:%M') }}</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

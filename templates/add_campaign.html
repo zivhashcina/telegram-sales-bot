@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>קמפיין חדש</h1>
+<form method="post">
+    <div class="mb-3">
+        <label for="name" class="form-label">שם הקמפיין</label>
+        <input type="text" class="form-control" id="name" name="name" required>
+    </div>
+    <div class="mb-3">
+        <label for="message" class="form-label">תוכן ההודעה</label>
+        <textarea class="form-control" id="message" name="message" rows="5" required></textarea>
+    </div>
+    <div class="mb-3">
+        <label for="category" class="form-label">סינון לפי קטגוריה (אופציונלי)</label>
+        <input type="text" class="form-control" id="category" name="category">
+    </div>
+    <div class="mb-3">
+        <label for="min_views" class="form-label">מינימום צפיות במוצר (אופציונלי)</label>
+        <input type="number" class="form-control" id="min_views" name="min_views">
+    </div>
+    <div class="mb-3">
+        <label for="scheduled_at" class="form-label">תזמון (השאר ריק לשליחה מיידית)</label>
+        <input type="datetime-local" class="form-control" id="scheduled_at" name="scheduled_at">
+    </div>
+    <button type="submit" class="btn btn-success">צור קמפיין</button>
+</form>
+{% endblock %}
