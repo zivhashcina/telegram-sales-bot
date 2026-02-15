@@ -1,6 +1,8 @@
 import os
 import threading
 import logging
+import asyncio
+from threading import Lock
 from flask import Flask, request, jsonify
 from bot import application as bot_application
 from admin import app as admin_app
@@ -10,6 +12,20 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
 logger = logging.getLogger(__name__)
 
 app = admin_app
+
+# משתנים גלובליים לאתחול בטוח
+_initialized = False
+_init_lock = Lock()
+
+def ensure_initialized():
+    """מבטיח שה-application מאותחל פעם אחת בלבד."""
+    global _initialized
+    if not _initialized:
+        with _init_lock:
+            if not _initialized:
+                asyncio.run(bot_application.initialize())
+                _initialized = True
+                logger.info("Bot application initialized successfully")
 
 @app.route('/health')
 def health():
@@ -24,10 +40,13 @@ def webhook():
     return jsonify({"status": "bad request"}), 400
 
 def process_update(update_json):
+    """מעבד עדכון מ-webhook – מבטיח אתחול לפני השימוש."""
     try:
+        # ודא שה-application מאותחל
+        ensure_initialized()
+
         from telegram import Update
         update = Update.de_json(update_json, bot_application.bot)
-        import asyncio
         asyncio.run(bot_application.process_update(update))
     except Exception as e:
         logger.error(f"Error processing update: {e}")

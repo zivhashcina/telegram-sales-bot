@@ -47,7 +47,6 @@ def log_interaction(user_id, product_id, action):
     db_session.commit()
 
 async def show_main_menu(chat_id, context, text=None):
-    """הצגת התפריט הראשי"""
     keyboard = [
         [InlineKeyboardButton("🔍 חפש מוצר", callback_data="search")],
         [InlineKeyboardButton("📂 קטגוריות", callback_data="categories")],
@@ -79,7 +78,6 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 async def inline_query(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """חיפוש Inline – לא שינינו"""
     query = update.inline_query.query
     if not query:
         return
@@ -118,7 +116,6 @@ async def inline_query(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.inline_query.answer(results, cache_time=0)
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """טיפול בהודעות טקסט – חיפוש או שיחת צור קשר"""
     if context.user_data.get('in_conversation'):
         return
 
@@ -161,15 +158,12 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 reply_markup=reply_markup
             )
 
-# ------------------ פונקציות עזר לשליחת מוצר ------------------
 async def send_product(chat_id, context, product, extra_buttons=None):
-    """שולח הודעה עם מוצר (תמונה או טקסט) ומוסיף כפתורים"""
     keyboard = [
         [InlineKeyboardButton("🛒 קנה עכשיו", url=product.affiliate_link)]
     ]
     if extra_buttons:
         keyboard.extend(extra_buttons)
-    # תמיד נוסיף כפתור חזרה לתפריט ראשי בתחתית
     keyboard.append([InlineKeyboardButton("🔍 חזרה לתפריט", callback_data="back_to_main")])
 
     reply_markup = InlineKeyboardMarkup(keyboard)
@@ -189,7 +183,7 @@ async def send_product(chat_id, context, product, extra_buttons=None):
             reply_markup=reply_markup
         )
 
-# ------------------ שיחת צור קשר (ללא אימייל) ------------------
+# ------------------ שיחת צור קשר ------------------
 async def contact_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     try:
@@ -243,7 +237,7 @@ async def contact_cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await show_main_menu(update.effective_chat.id, context)
     return ConversationHandler.END
 
-# ------------------ טיפול בכפתורים (ניווט חדש) ------------------
+# ------------------ טיפול בכפתורים ------------------
 async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     try:
@@ -256,59 +250,40 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = query.message.chat_id
     logger.info(f"Button clicked: {data} by user {user.id}")
 
-    # ------------------ כפתור חיפוש ------------------
     if data == "search":
         await query.message.delete()
-        await context.bot.send_message(
-            chat_id=chat_id,
-            text="🔍 הקלד את מילות החיפוש שלך:"
-        )
+        await context.bot.send_message(chat_id=chat_id, text="🔍 הקלד את מילות החיפוש שלך:")
         return
 
-    # ------------------ כפתור קטגוריות (תפריט ראשי) ------------------
     if data == "categories":
         categories = db_session.query(Product.category).filter(Product.is_active == True).distinct().all()
         categories = [c[0] for c in categories if c[0]]
         if not categories:
             await context.bot.send_message(chat_id, "אין קטגוריות זמינות כרגע.")
             return
-        # שולחים הודעה חדשה עם רשימת קטגוריות
         keyboard = [[InlineKeyboardButton(cat, callback_data=f"cat_{cat}")] for cat in categories]
         keyboard.append([InlineKeyboardButton("🔙 חזרה לתפריט", callback_data="back_to_main")])
-        await context.bot.send_message(
-            chat_id=chat_id,
-            text="📂 בחר קטגוריה:",
-            reply_markup=InlineKeyboardMarkup(keyboard)
-        )
-        # מוחקים את ההודעה הקודמת (התפריט הראשי)
+        await context.bot.send_message(chat_id=chat_id, text="📂 בחר קטגוריה:", reply_markup=InlineKeyboardMarkup(keyboard))
         await query.message.delete()
         return
 
-    # ------------------ בחירת קטגוריה ------------------
     if data.startswith("cat_"):
         category = data[4:]
         products = db_session.query(Product).filter(Product.category == category, Product.is_active == True).limit(10).all()
         if not products:
             await context.bot.send_message(chat_id, f"אין מוצרים בקטגוריה {category}.")
             return
-        # שמירת המידע ב-user_data לניווט
         context.user_data['current_category'] = category
         context.user_data['category_products'] = [p.id for p in products]
         context.user_data['category_index'] = 0
-
-        # שליחת המוצר הראשון
         product = products[0]
         log_interaction(user.id, product.id, 'view')
-        extra_buttons = [
-            [InlineKeyboardButton("▶ למוצר הבא", callback_data="cat_next")]
-        ]
+        extra_buttons = [[InlineKeyboardButton("▶ למוצר הבא", callback_data="cat_next")]]
         await send_product(chat_id, context, product, extra_buttons)
-        await query.message.delete()  # מוחקים את רשימת הקטגוריות
+        await query.message.delete()
         return
 
-    # ------------------ כפתור "הבא" בקטגוריה ------------------
     if data == "cat_next":
-        # שליפת המידע מה-user_data
         if 'category_products' not in context.user_data:
             await context.bot.send_message(chat_id, "אין מידע על קטגוריה. נסה שוב.")
             return
@@ -316,41 +291,30 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         current_index = context.user_data.get('category_index', 0)
         next_index = (current_index + 1) % len(products_ids)
         context.user_data['category_index'] = next_index
-
         product = db_session.get(Product, products_ids[next_index])
         if not product:
             await context.bot.send_message(chat_id, "שגיאה בשליפת המוצר.")
             return
-
         log_interaction(user.id, product.id, 'view')
-        extra_buttons = [
-            [InlineKeyboardButton("▶ למוצר הבא", callback_data="cat_next")]
-        ]
+        extra_buttons = [[InlineKeyboardButton("▶ למוצר הבא", callback_data="cat_next")]]
         await send_product(chat_id, context, product, extra_buttons)
-        # מוחקים את ההודעה הקודמת (המוצר הקודם)
         await query.message.delete()
         return
 
-    # ------------------ מוצרים חמים ------------------
     if data == "top_products":
         products = db_session.query(Product).filter(Product.is_active == True).order_by(Product.clicks.desc()).limit(10).all()
         if not products:
             await context.bot.send_message(chat_id, "אין מוצרים חמים כרגע.")
             return
-        # שמירת המידע ב-user_data
         context.user_data['hot_products'] = [p.id for p in products]
         context.user_data['hot_index'] = 0
-
         product = products[0]
         log_interaction(user.id, product.id, 'view')
-        extra_buttons = [
-            [InlineKeyboardButton("▶ למוצר הבא", callback_data="hot_next")]
-        ]
+        extra_buttons = [[InlineKeyboardButton("▶ למוצר הבא", callback_data="hot_next")]]
         await send_product(chat_id, context, product, extra_buttons)
         await query.message.delete()
         return
 
-    # ------------------ כפתור "הבא" במוצרים חמים ------------------
     if data == "hot_next":
         if 'hot_products' not in context.user_data:
             await context.bot.send_message(chat_id, "אין מידע על מוצרים חמים. נסה שוב.")
@@ -359,34 +323,26 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         current_index = context.user_data.get('hot_index', 0)
         next_index = (current_index + 1) % len(products_ids)
         context.user_data['hot_index'] = next_index
-
         product = db_session.get(Product, products_ids[next_index])
         if not product:
             await context.bot.send_message(chat_id, "שגיאה בשליפת המוצר.")
             return
-
         log_interaction(user.id, product.id, 'view')
-        extra_buttons = [
-            [InlineKeyboardButton("▶ למוצר הבא", callback_data="hot_next")]
-        ]
+        extra_buttons = [[InlineKeyboardButton("▶ למוצר הבא", callback_data="hot_next")]]
         await send_product(chat_id, context, product, extra_buttons)
         await query.message.delete()
         return
 
-    # ------------------ חזרה לתפריט ראשי ------------------
     if data == "back_to_main":
-        # מנקה את כל המידע הזמני
         context.user_data.clear()
         await show_main_menu(chat_id, context)
         await query.message.delete()
         return
 
-# ======================== יצירת אובייקט application לייצוא ל-main.py ========================
+# ------------------ יצירת אובייקט application ------------------
 application = Application.builder().token(config.BOT_TOKEN).build()
-application = Application.builder().token(config.BOT_TOKEN).build()
-# אתחול האפליקציה - חיוני לפני הוספת handlers!
-application.initialize()
-# ConversationHandler לצור קשר
+
+# ConversationHandler
 contact_conv = ConversationHandler(
     entry_points=[CallbackQueryHandler(contact_start, pattern='^contact$')],
     states={
@@ -405,8 +361,6 @@ application.add_handler(InlineQueryHandler(inline_query))
 application.add_handler(CallbackQueryHandler(button_callback))
 application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
-# ======================== (לא חובה) הרצה ישירה – אפשר להשאיר או למחוק ========================
 if __name__ == "__main__":
     init_db()
-    print("Bot started locally with polling...")
     application.run_polling()
