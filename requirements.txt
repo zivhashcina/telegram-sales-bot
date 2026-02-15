@@ -8,3 +8,4 @@ werkzeug==3.0.1
 gunicorn==21.2.0
 waitress==2.1.2
 pg8000
+requests

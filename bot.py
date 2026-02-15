@@ -381,30 +381,30 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.message.delete()
         return
 
-def main():
-    init_db()
-    application = Application.builder().token(config.BOT_TOKEN).build()
+# ======================== יצירת אובייקט application לייצוא ל-main.py ========================
+application = Application.builder().token(config.BOT_TOKEN).build()
 
-    # ConversationHandler לצור קשר
-    contact_conv = ConversationHandler(
-        entry_points=[CallbackQueryHandler(contact_start, pattern='^contact$')],
-        states={
-            CONTACT_NAME: [MessageHandler(filters.TEXT & ~filters.COMMAND, contact_name)],
-            CONTACT_MESSAGE: [MessageHandler(filters.TEXT & ~filters.COMMAND, contact_message)],
-        },
-        fallbacks=[CommandHandler("cancel", contact_cancel)],
-        allow_reentry=True
-    )
-    application.add_handler(contact_conv)
+# ConversationHandler לצור קשר
+contact_conv = ConversationHandler(
+    entry_points=[CallbackQueryHandler(contact_start, pattern='^contact$')],
+    states={
+        CONTACT_NAME: [MessageHandler(filters.TEXT & ~filters.COMMAND, contact_name)],
+        CONTACT_MESSAGE: [MessageHandler(filters.TEXT & ~filters.COMMAND, contact_message)],
+    },
+    fallbacks=[CommandHandler("cancel", contact_cancel)],
+    allow_reentry=True
+)
+application.add_handler(contact_conv)
 
-    # Handlers רגילים
-    application.add_handler(CommandHandler("start", start))
-    application.add_handler(CommandHandler("help", help_command))
-    application.add_handler(InlineQueryHandler(inline_query))
-    application.add_handler(CallbackQueryHandler(button_callback))
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+# Handlers רגילים
+application.add_handler(CommandHandler("start", start))
+application.add_handler(CommandHandler("help", help_command))
+application.add_handler(InlineQueryHandler(inline_query))
+application.add_handler(CallbackQueryHandler(button_callback))
+application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
-    application.run_polling()
-
+# ======================== (לא חובה) הרצה ישירה – אפשר להשאיר או למחוק ========================
 if __name__ == "__main__":
-    main()
+    init_db()
+    print("Bot started locally with polling...")
+    application.run_polling()
