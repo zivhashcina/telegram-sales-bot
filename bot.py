@@ -383,7 +383,9 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # ======================== יצירת אובייקט application לייצוא ל-main.py ========================
 application = Application.builder().token(config.BOT_TOKEN).build()
-
+application = Application.builder().token(config.BOT_TOKEN).build()
+# אתחול האפליקציה - חיוני לפני הוספת handlers!
+application.initialize()
 # ConversationHandler לצור קשר
 contact_conv = ConversationHandler(
     entry_points=[CallbackQueryHandler(contact_start, pattern='^contact$')],
