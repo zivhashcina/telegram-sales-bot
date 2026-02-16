@@ -183,7 +183,7 @@ async def send_product(chat_id, context, product, extra_buttons=None):
             reply_markup=reply_markup
         )
 
-# ------------------ שיחת צור קשר ------------------
+# ------------------ שיחת צור קשר (ללא אימייל) ------------------
 async def contact_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     try:
@@ -198,10 +198,12 @@ async def contact_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         parse_mode="Markdown"
     )
     context.user_data['in_conversation'] = True
+    context.user_data['contact_step'] = 'name'
     return CONTACT_NAME
 
 async def contact_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data['contact_name'] = update.message.text
+    context.user_data['contact_step'] = 'message'
     await update.message.reply_text("💬 אנא הקלד את *הודעתך*:", parse_mode="Markdown")
     return CONTACT_MESSAGE
 

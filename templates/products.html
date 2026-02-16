@@ -9,7 +9,15 @@
     {% for p in products %}
         <tr>
             <td>{{ p.id }}</td>
-            <td><img src="{{ p.image_url }}" width="50"></td>
+            <td>
+                {% if p.image_url and (p.image_url.startswith('http://') or p.image_url.startswith('https://')) %}
+                    <img src="{{ p.image_url }}" width="50">
+                {% elif p.image_url %}
+                    <img src="{{ url_for('static', filename='uploads/' + p.image_url) }}" width="50">
+                {% else %}
+                    <span style="color: #999;">אין תמונה</span>
+                {% endif %}
+            </td>
             <td>{{ p.name }}</td>
             <td>{{ p.category }}</td>
             <td>{{ p.price }} ₪</td>

@@ -1,5 +1,5 @@
 import os
-from flask import Flask, render_template, request, redirect, url_for, flash, session
+from flask import Flask, render_template, request, redirect, url_for, flash, session, abort
 from werkzeug.utils import secure_filename
 from functools import wraps
 import config
@@ -60,43 +60,12 @@ def products():
     products = db_session.query(Product).all()
     return render_template('products.html', products=products)
 
-@app.route('/admin/product/add', methods=['GET', 'POST'])
-@login_required
-def add_product():
-    if request.method == 'POST':
-        name = request.form['name']
-        description = request.form['description']
-        category = request.form['category']
-        price = float(request.form['price'])
-        affiliate_link = request.form['affiliate_link']
-        tags = request.form.getlist('tags')
-        image_url = request.form['image_url']
-        if 'image_file' in request.files:
-            file = request.files['image_file']
-            if file.filename:
-                filename = secure_filename(file.filename)
-                file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-                image_url = url_for('static', filename=f'uploads/{filename}')
-
-        product = Product(
-            name=name,
-            description=description,
-            category=category,
-            price=price,
-            affiliate_link=affiliate_link,
-            tags=tags,
-            image_url=image_url
-        )
-        db_session.add(product)
-        db_session.commit()
-        flash('המוצר נוסף בהצלחה')
-        return redirect(url_for('products'))
-    return render_template('add_product.html')
-
 @app.route('/admin/product/edit/<int:product_id>', methods=['GET', 'POST'])
 @login_required
 def edit_product(product_id):
-    product = db_session.query(Product).get_or_404(product_id)
+    product = db_session.get(Product, product_id)
+    if not product:
+        abort(404)
     if request.method == 'POST':
         product.name = request.form['name']
         product.description = request.form['description']
@@ -119,7 +88,9 @@ def edit_product(product_id):
 @app.route('/admin/product/delete/<int:product_id>')
 @login_required
 def delete_product(product_id):
-    product = db_session.query(Product).get_or_404(product_id)
+    product = db_session.get(Product, product_id)
+    if not product:
+        abort(404)
     db_session.delete(product)
     db_session.commit()
     flash('המוצר נמחק')
