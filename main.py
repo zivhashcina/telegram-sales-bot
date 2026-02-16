@@ -16,14 +16,20 @@ app = admin_app
 # משתנים גלובליים לאתחול בטוח
 _initialized = False
 _init_lock = Lock()
+_loop = None
 
 def ensure_initialized():
-    """מבטיח שה-application מאותחל פעם אחת בלבד."""
-    global _initialized
+    """מבטיח שה-application מאותחל פעם אחת בלבד עם לולאה מתאימה."""
+    global _initialized, _loop
     if not _initialized:
         with _init_lock:
             if not _initialized:
-                asyncio.run(bot_application.initialize())
+                try:
+                    _loop = asyncio.get_running_loop()
+                except RuntimeError:
+                    _loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(_loop)
+                _loop.run_until_complete(bot_application.initialize())
                 _initialized = True
                 logger.info("Bot application initialized successfully")
 
@@ -40,14 +46,21 @@ def webhook():
     return jsonify({"status": "bad request"}), 400
 
 def process_update(update_json):
-    """מעבד עדכון מ-webhook – מבטיח אתחול לפני השימוש."""
+    """מעבד עדכון מ-webhook – יוצר לולאה חדשה לכל thread."""
     try:
-        # ודא שה-application מאותחל
+        # Ensure initialized before processing
         ensure_initialized()
 
         from telegram import Update
         update = Update.de_json(update_json, bot_application.bot)
-        asyncio.run(bot_application.process_update(update))
+
+        # Create a new event loop for this thread
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
+            loop.run_until_complete(bot_application.process_update(update))
+        finally:
+            loop.close()
     except Exception as e:
         logger.error(f"Error processing update: {e}")
 
