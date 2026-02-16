@@ -27,7 +27,8 @@ def ensure_initialized():
                 loop = asyncio.new_event_loop()
                 asyncio.set_event_loop(loop)
                 loop.run_until_complete(bot_application.initialize())
-                loop.close()
+                # לא סוגרים את הלולאה! שומרים אותה פתוחה לשימוש עתידי
+                # loop.close()
                 _initialized = True
                 logger.info("Bot application initialized successfully")
 
@@ -39,21 +40,23 @@ def health():
 def webhook():
     update = request.get_json()
     if update:
-        # הפעלת העדכון ב-thread נפרד
         threading.Thread(target=process_update, args=(update,)).start()
         return jsonify({"status": "ok"}), 200
     return jsonify({"status": "bad request"}), 400
 
 def process_update(update_json):
-    """מעבד עדכון עם לולאת אירועים חדשה לכל thread."""
+    """מעבד עדכון עם לולאת אירועים משותפת."""
     try:
         ensure_initialized()
         from telegram import Update
         update = Update.de_json(update_json, bot_application.bot)
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
+        # שימוש בלולאה הקיימת
+        loop = asyncio.get_event_loop()
+        if loop.is_closed():
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
         loop.run_until_complete(bot_application.process_update(update))
-        loop.close()
+        # לא סוגרים את הלולאה
     except Exception as e:
         logger.error(f"Error processing update: {e}")
 
