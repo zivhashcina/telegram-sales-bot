@@ -2,7 +2,6 @@ import os
 import threading
 import logging
 import asyncio
-from threading import Lock
 from flask import Flask, request, jsonify
 from bot import application as bot_application
 from admin import app as admin_app
@@ -15,20 +14,16 @@ app = admin_app
 
 # משתנים גלובליים לאתחול בטוח
 _initialized = False
-_init_lock = Lock()
+_init_lock = threading.Lock()
 
 def ensure_initialized():
-    """מבטיח שה-application מאותחל פעם אחת בלבד וממתין לסיום האתחול."""
+    """מבטיח שה-application מאותחל פעם אחת בלבד."""
     global _initialized
     if not _initialized:
         with _init_lock:
             if not _initialized:
                 # אתחול מלא של האפליקציה
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-                loop.run_until_complete(bot_application.initialize())
-                # לא סוגרים את הלולאה! שומרים אותה פתוחה לשימוש עתידי
-                # loop.close()
+                asyncio.run(bot_application.initialize())
                 _initialized = True
                 logger.info("Bot application initialized successfully")
 
@@ -40,23 +35,19 @@ def health():
 def webhook():
     update = request.get_json()
     if update:
+        # הפעלת העדכון ב-thread נפרד
         threading.Thread(target=process_update, args=(update,)).start()
         return jsonify({"status": "ok"}), 200
     return jsonify({"status": "bad request"}), 400
 
 def process_update(update_json):
-    """מעבד עדכון עם לולאת אירועים משותפת."""
+    """מעבד עדכון מ-webhook."""
     try:
         ensure_initialized()
         from telegram import Update
         update = Update.de_json(update_json, bot_application.bot)
-        # שימוש בלולאה הקיימת
-        loop = asyncio.get_event_loop()
-        if loop.is_closed():
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-        loop.run_until_complete(bot_application.process_update(update))
-        # לא סוגרים את הלולאה
+        # שימוש ב-asyncio.run להרצת הקורוטינה
+        asyncio.run(bot_application.process_update(update))
     except Exception as e:
         logger.error(f"Error processing update: {e}")
 

@@ -60,6 +60,39 @@ def products():
     products = db_session.query(Product).all()
     return render_template('products.html', products=products)
 
+@app.route('/admin/product/add', methods=['GET', 'POST'])
+@login_required
+def add_product():
+    if request.method == 'POST':
+        name = request.form['name']
+        description = request.form['description']
+        category = request.form['category']
+        price = float(request.form['price'])
+        affiliate_link = request.form['affiliate_link']
+        tags = request.form.getlist('tags')
+        image_url = request.form['image_url']
+        if 'image_file' in request.files:
+            file = request.files['image_file']
+            if file.filename:
+                filename = secure_filename(file.filename)
+                file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+                image_url = url_for('static', filename=f'uploads/{filename}')
+
+        product = Product(
+            name=name,
+            description=description,
+            category=category,
+            price=price,
+            affiliate_link=affiliate_link,
+            tags=tags,
+            image_url=image_url
+        )
+        db_session.add(product)
+        db_session.commit()
+        flash('המוצר נוסף בהצלחה')
+        return redirect(url_for('products'))
+    return render_template('add_product.html')
+
 @app.route('/admin/product/edit/<int:product_id>', methods=['GET', 'POST'])
 @login_required
 def edit_product(product_id):
